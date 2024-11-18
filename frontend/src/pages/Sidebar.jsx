@@ -92,6 +92,11 @@ const splitWiseLinks = [
     href: "/activity",
     icon: <IconActivity className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
   },
+  {
+    label: "Group Prediction",
+    href: "/gPrediction",
+    icon: <IconLicense className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
+  },
 ];
 
 export function SidebarPage() {

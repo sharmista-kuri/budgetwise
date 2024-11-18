@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { createData } from "../services/firestoreService";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "../firebase";
-import { collection, getDoc, doc, getDocs, query, where } from "firebase/firestore";
+import { collection, getDoc, doc, getDocs, query, where, updateDoc, deleteDoc } from "firebase/firestore";
 
 export default function Groups() {
   const [user] = useAuthState(auth);
@@ -17,8 +17,9 @@ export default function Groups() {
     groupName: "",
     description: "",
     members: [],
-    memberIds:[]
+    memberIds: []
   });
+  const [isEditing, setIsEditing] = useState(false); // Track if editing a group
 
   useEffect(() => {
     if (user) {
@@ -60,7 +61,11 @@ export default function Groups() {
     return [];
   };
 
-  const handleShowAddForm = () => setShowAddForm(!showAddForm);
+  const handleShowAddForm = () => {
+    setShowAddForm(true);
+    setIsEditing(false);
+    setFormGroup({ groupName: "", description: "", members: [], memberIds: [] });
+  };
 
   const handleGroupChange = (e) => {
     const { name, value } = e.target;
@@ -83,30 +88,60 @@ export default function Groups() {
     setFormGroup(prev => ({
       ...prev,
       members: prev.members.filter(member => member.id !== memberId),
+      memberIds: prev.memberIds.filter(id => id !== memberId)
     }));
   };
 
   const handleAddGroup = async () => {
-    
     const updatedFormGroup = {
       ...formGroup,
       members: [...formGroup.members, { id: user.uid, name: userName }],
       memberIds: [...formGroup.memberIds, user.uid],
     };
-   
-    setFormGroup(updatedFormGroup);
 
-    await createData("groups", updatedFormGroup, user.uid);
+    if (isEditing) {
+      // Update existing group
+      const groupRef = doc(db, "groups", groupDetails.id);
+      await updateDoc(groupRef, updatedFormGroup);
 
-    setGroups([...groups, updatedFormGroup]);
+      setGroups(prevGroups =>
+        prevGroups.map(group =>
+          group.id === groupDetails.id ? { id: groupDetails.id, ...updatedFormGroup } : group
+        )
+      );
+      setIsEditing(false);
+      console.log("Group updated successfully.");
+    } else {
+      // Create new group
+      await createData("groups", updatedFormGroup, user.uid);
+      setGroups([...groups, updatedFormGroup]);
+      console.log("Group created successfully.");
+    }
 
-    setFormGroup({ groupName: "", description: "", members: [] });
+    setFormGroup({ groupName: "", description: "", members: [], memberIds: [] });
     setShowAddForm(false);
-};
+  };
 
-
-  const handleGroupClick = (group) => {
+  const handleEditGroup = (group) => {
+    setIsEditing(true);
+    setFormGroup({
+      groupName: group.groupName,
+      description: group.description,
+      members: group.members,
+      memberIds: group.memberIds,
+    });
+    setShowAddForm(true);
     setGroupDetails(group);
+  };
+
+  const handleDeleteGroup = async (groupId) => {
+    try {
+      await deleteDoc(doc(db, "groups", groupId));
+      setGroups(groups.filter(group => group.id !== groupId));
+      console.log("Group deleted successfully.");
+    } catch (error) {
+      console.error("Error deleting group:", error);
+    }
   };
 
   if (loading) {
@@ -130,7 +165,7 @@ export default function Groups() {
             onClick={handleShowAddForm}
             className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md"
           >
-            {showAddForm ? "Cancel" : "Add Group"}
+            Add Group
           </button>
         </div>
       </div>
@@ -140,7 +175,9 @@ export default function Groups() {
           <div className="fixed inset-0 grid place-items-center z-[100]">
             <motion.div className="w-full max-w-[500px] h-full md:h-fit md:max-h-[90%] flex flex-col bg-white dark:bg-neutral-900 sm:rounded-3xl overflow-hidden">
               <div className="p-6">
-                <motion.h3 className="font-bold text-neutral-700 dark:text-neutral-200">Add New Group</motion.h3>
+                <motion.h3 className="font-bold text-neutral-700 dark:text-neutral-200">
+                  {isEditing ? "Edit Group" : "Add New Group"}
+                </motion.h3>
                 <form className="space-y-4 mt-4">
                   <div>
                     <label className="block text-neutral-600 dark:text-neutral-400">Group Name</label>
@@ -190,7 +227,7 @@ export default function Groups() {
                 </form>
                 <div className="mt-6 flex justify-between">
                   <button
-                    onClick={handleShowAddForm}
+                    onClick={() => setShowAddForm(false)}
                     className="px-4 py-2 text-sm rounded-full font-bold bg-red-600 text-white"
                   >
                     Cancel
@@ -213,40 +250,29 @@ export default function Groups() {
         {groups.map(group => (
           <motion.div
             key={group.id}
-            onClick={() => handleGroupClick(group)}
-            className="p-4 flex justify-between items-center bg-gray-100 dark:bg-gray-800 rounded-xl cursor-pointer"
+            className="p-4 flex justify-between items-center bg-gray-100 dark:bg-gray-800 rounded-xl"
           >
             <div>
               <h3 className="font-medium text-neutral-800 dark:text-neutral-200">{group.groupName}</h3>
               <p className="text-neutral-600 dark:text-neutral-400">{group.description}</p>
             </div>
+            <div className="flex space-x-4">
+              <button
+                onClick={() => handleEditGroup(group)}
+                className="px-4 py-2 text-sm rounded-full font-bold bg-blue-600 text-white"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => handleDeleteGroup(group.id)}
+                className="px-4 py-2 text-sm rounded-full font-bold bg-red-600 text-white"
+              >
+                Delete
+              </button>
+            </div>
           </motion.div>
         ))}
       </ul>
-
-      {/* Group Details Card */}
-      {groupDetails && (
-        <div className="fixed inset-0 grid place-items-center z-[100]">
-          <motion.div className="w-full max-w-[500px] h-full md:h-fit md:max-h-[90%] flex flex-col bg-white dark:bg-neutral-900 sm:rounded-3xl overflow-hidden p-6">
-            <motion.h3 className="font-bold text-neutral-700 dark:text-neutral-200">{groupDetails.groupName}</motion.h3>
-            <p className="text-neutral-600 dark:text-neutral-400">{groupDetails.description}</p>
-            <h4 className="mt-4 font-semibold text-neutral-700 dark:text-neutral-200">Members:</h4>
-            <ul>
-              {groupDetails.members.map(member => (
-                <li key={member.id} className="text-neutral-800 dark:text-neutral-200">
-                  {member.name}
-                </li>
-              ))}
-            </ul>
-            <button
-              onClick={() => setGroupDetails(null)}
-              className="mt-6 px-4 py-2 text-sm rounded-full font-bold bg-red-600 text-white"
-            >
-              Close
-            </button>
-          </motion.div>
-        </div>
-      )}
     </>
   );
 }

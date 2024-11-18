@@ -16,8 +16,19 @@ const AddExpenseCard = ({ onSave, onClose, editingExpense }) => {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10)); // Date state
   const [currentUserName, setCurrentUserName] = useState('');
 
-  const categories = ['Entertainment', 'Food', 'Groceries', 'Utilities', 'Travel', 'Miscellaneous']; // Default categories
-
+  //const categories = ['Entertainment', 'Food', 'Groceries', 'Utilities', 'Travel', 'Miscellaneous']; // Default categories
+  const categories = [
+    "Food",
+    "Housing",
+    "Utilities",
+    "Transportation",
+    "Entertainment",
+    "Recurring Payments",
+    "Miscellaneous",
+    "Healthcare",
+    "Savings",
+    "Taxes",
+  ];
   useEffect(() => {
     const loadData = async () => {
       // Fetch groups

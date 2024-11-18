@@ -1,7 +1,7 @@
 
 import { collection, addDoc, getDocs, query, where, doc, updateDoc, deleteDoc,limit,arrayRemove, arrayUnion } from "firebase/firestore";
 import { db,auth } from "../firebase"; 
-import { format,subMonths } from "date-fns"; 
+import { subMonths, format} from "date-fns"; 
 
 
 export const fetchData = async (resourceName, userId) => {
@@ -338,3 +338,157 @@ export const checkCategoryLimits = (transactions, categories) => {
       return { data: [] };
     }
   };
+
+  const categories = [
+    "Food",
+    "Housing",
+    "Utilities",
+    "Transportation",
+    "Entertainment",
+    "Recurring Payments",
+    "Miscellaneous",
+    "Healthcare",
+    "Savings",
+    "Taxes",
+  ];
+  
+
+  
+  export const fetchGroupwiseExpensesByCategory = async (userId) => {
+    try {
+      const expensesRef = collection(db, "expenses");
+      const q = query(expensesRef, where("payerIds", "array-contains", userId));
+      
+      const snapshot = await getDocs(q);
+  
+      const expensesByMonth = {};
+  
+      snapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        
+        const transactionMonth = data.createdAt
+        ? format(new Date(data.createdAt), "MM-yyyy") // Convert string to Date
+        : "Unknown";
+  
+        if (!expensesByMonth[transactionMonth]) {
+          expensesByMonth[transactionMonth] = {
+            Food: 0,
+            Housing: 0,
+            Utilities: 0,
+            Transportation: 0,
+            Entertainment: 0,
+            "Recurring Payments": 0,
+            Miscellaneous: 0,
+            Healthcare: 0,
+            Savings: 0,
+            Taxes: 0,
+          };
+        }
+  
+        const userPayer = data.payers.find((payer) => payer.userId === userId);
+        if (userPayer) {
+          const userShare = parseFloat(userPayer.share || 0);
+  
+          if (expensesByMonth[transactionMonth][data.category] !== undefined) {
+            expensesByMonth[transactionMonth][data.category] += userShare;
+          }
+        }
+      });
+  
+      const sortedMonths = Object.keys(expensesByMonth).sort((a, b) => new Date(a) - new Date(b));
+      const formattedData = sortedMonths.map((month) => Object.values(expensesByMonth[month]));
+  
+      return { data: formattedData };
+    } catch (error) {
+      console.error("Error fetching groupwise expenses by category:", error);
+      return { data: [] };
+    }
+  };
+
+
+
+  export const fetchGroupwiseExpenses = async (userId) => {
+    try {
+      const expensesByMonth = {}; // To group expenses by month
+
+      const expensesRef = collection(db, "expenses");
+      const q = query(expensesRef, where("payerIds", "array-contains", userId));
+      const snapshot = await getDocs(q);
+
+      if (snapshot.empty) {
+        console.warn("No expenses found for user:", userId);
+        return { data: [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]] };
+      }
+
+      // Prepare keys for the last three months
+      const lastThreeMonths = [
+        format(subMonths(new Date(), 2), "MM-yyyy"), // 2 months ago
+        format(subMonths(new Date(), 1), "MM-yyyy"), // 1 month ago
+        format(new Date(), "MM-yyyy"),              // Current month
+      ];
+
+      // Initialize arrays for the last three months
+      const monthlyExpenses = {
+        [lastThreeMonths[0]]: new Array(10).fill(0),
+        [lastThreeMonths[1]]: new Array(10).fill(0),
+        [lastThreeMonths[2]]: new Array(10).fill(0),
+      };
+
+      // Process documents
+      snapshot.docs.forEach((doc) => {
+        const data = doc.data();
+
+        // Use the `date` field to determine the transaction month
+        const transactionMonth = data.date
+          ? format(new Date(data.date), "MM-yyyy")
+          : null;
+
+        if (!transactionMonth || !lastThreeMonths.includes(transactionMonth)) {
+          return; // Skip if not within the last three months
+        }
+
+        // Calculate user's share
+        let userShare = 0;
+        const totalAmount = parseFloat(data.amount || 0);
+
+        if (data.payerIds.includes(userId)) {
+          const numParticipants = data.payerIds.length;
+          userShare = totalAmount / numParticipants;
+        } else {
+          console.warn("User not found in payerIds for document:", doc.id);
+          return; // Skip this document
+        }
+
+        // Find the category index
+        const categoryIndex = categories.indexOf(data.category);
+        if (categoryIndex !== -1) {
+          monthlyExpenses[transactionMonth][categoryIndex] += userShare; // Add the user's share
+        } else {
+          console.warn("Category not found in predefined categories:", data.category);
+        }
+      });
+
+      // Ensure we return arrays for all three months
+      const formattedData = lastThreeMonths.map((month) => monthlyExpenses[month]);
+
+      console.log("Formatted groupwise expenses for prediction:", formattedData);
+
+      return { data: formattedData };
+    } catch (error) {
+      console.error("Error fetching groupwise expenses:", error);
+      return { data: [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]] };
+    }
+  };
+
+  
+  
+
+
+
+  
+  
+
+
+
+
+  

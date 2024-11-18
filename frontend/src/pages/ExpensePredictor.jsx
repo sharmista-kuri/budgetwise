@@ -73,7 +73,7 @@ const ExpensePredictor = () => {
       data: predictions ? predictions[monthIndex] : Array(categories.length).fill(0),
       backgroundColor: chartType === "Pie" ? categories.map(() => `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.7)`) : 'rgba(75, 192, 192, 0.8)',
       borderColor: 'rgba(75, 192, 192, 1)',
-      borderWidth: 5,
+      borderWidth: 2,
     }]
   });
 
