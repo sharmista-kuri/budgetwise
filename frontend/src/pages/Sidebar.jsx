@@ -88,8 +88,8 @@ const splitWiseLinks = [
     icon: <IconUsersGroup className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
   },
   {
-    label: "All Expenses",
-    href: "/expenses",
+    label: "Activity",
+    href: "/activity",
     icon: <IconActivity className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />,
   },
 ];

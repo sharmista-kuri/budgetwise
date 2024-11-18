@@ -11,7 +11,6 @@ const Expenses = () => {
   const [loading, setLoading] = useState(true);
   const [editingExpense, setEditingExpense] = useState(null);
   const [showAddExpenseCard, setShowAddExpenseCard] = useState(false);
-  const [showAddExpense, setShowAddExpense] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -80,25 +79,7 @@ const Expenses = () => {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4 text-white">Your Expenses</h2>
-      <div className='flex justify-end'>
-      <button
-          className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md my-6"
-          onClick={() => setShowAddExpense(true)}
-        >
-          Add Expense
-        </button>
-        </div>
-        {showAddExpense && (
-          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-            <AddExpenseCard
-              friends={[]}
-              groups={[]}
-              onSave={handleSaveExpense}
-              onClose={() => setShowAddExpense(false)}
-            />
-          </div>
-        )}
+      <h2 className="text-2xl font-bold mb-4 text-white">Your Activity</h2>
       <div className='w-[80%] justify-center ml-[150px]'>
       <ul>
         {expenses.map((expense) => {

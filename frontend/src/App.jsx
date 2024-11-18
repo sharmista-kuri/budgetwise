@@ -147,7 +147,7 @@ function App() {
         <Route path="/profile" element={user ? <Layout><MyProfile /></Layout> : <Navigate to="/auth" />} />
         <Route path="/friends" element={user ? <Layout><Friends /></Layout> : <Navigate to="/auth" />} />
         <Route path="/groups" element={user ? <Layout><Groups /></Layout> : <Navigate to="/auth" />} />
-        <Route path="/expenses" element={user ? <Layout><Expenses /></Layout> : <Navigate to="/auth" />} />
+        <Route path="/activity" element={user ? <Layout><Expenses /></Layout> : <Navigate to="/auth" />} />
         <Route path="/swdashboard" element={user ? <Layout><SWDashboard /></Layout> : <Navigate to="/auth" />} />
       </Routes>
     </Router>

@@ -60,6 +60,7 @@ export default function Auth() {
         lastName,
         displayName,
         email,
+        userId
       });
         console.log("Signup successful:", userCredential.user);
       } else {
