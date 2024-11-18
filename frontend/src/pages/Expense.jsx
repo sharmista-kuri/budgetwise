@@ -81,54 +81,55 @@ const Expenses = () => {
     <div className="p-6">
       <h2 className="text-2xl font-bold mb-4 text-white">Your Activity</h2>
       <div className='w-[80%] justify-center ml-[150px]'>
-      <ul>
-        {expenses.map((expense) => {
-          const hasSettled = expense.payers.some((payer) => payer.settled);
+        <ul>
+          {expenses.map((expense) => {
+            const hasSettled = expense.payers.some((payer) => payer.settled);
 
-          return (
-            <li key={expense.id} className="mb-4 p-4 bg-white shadow rounded-lg">
-              <h3 className="text-lg font-semibold">{expense.description}</h3>
-              <p>Amount: ${expense.amount}</p>
-              <p>Created By: {expense.createdBy === user.uid ? 'You' : expense.createdByName}</p>
+            return (
+              <li key={expense.id} className="mb-4 p-4 bg-white shadow rounded-lg">
+                <h3 className="text-lg font-semibold">{expense.description}</h3>
+                <p>Amount: ${expense.amount}</p>
+                <p>Date: {expense.date || 'N/A'}</p> {/* Display the date */}
+                <p>Created By: {expense.createdBy === user.uid ? 'You' : expense.createdByName}</p>
 
-              <h4 className="mt-2 font-semibold">Participants:</h4>
-              <ul>
-                {expense.payers.map((payer) => (
-                  <li key={payer.userId} className="flex justify-between">
-                    <span>{payer.name}</span>
-                    <span>
-                      {payer.settled ? (
-                        <span className="text-green-600">Settled</span>
-                      ) : (
-                        <>
-                          <span className="text-red-600">Owes ${payer.share}</span>
-                          {payer.userId === user.uid && (
-                            <button
-                              onClick={() => handleSettle(expense.id, payer.userId)}
-                              className="ml-2 text-blue-600 underline"
-                            >
-                              Settle
-                            </button>
-                          )}
-                        </>
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+                <h4 className="mt-2 font-semibold">Participants:</h4>
+                <ul>
+                  {expense.payers.map((payer) => (
+                    <li key={payer.userId} className="flex justify-between">
+                      <span>{payer.name}</span>
+                      <span>
+                        {payer.settled ? (
+                          <span className="text-green-600">Settled</span>
+                        ) : (
+                          <>
+                            <span className="text-red-600">Owes ${payer.share}</span>
+                            {payer.userId === user.uid && (
+                              <button
+                                onClick={() => handleSettle(expense.id, payer.userId)}
+                                className="ml-2 text-blue-600 underline"
+                              >
+                                Settle
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
 
-              {(!hasSettled &&  expense.createdBy === user.uid) && (
-                <button
-                  onClick={() => handleEditExpense(expense)}
-                  className="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-                >
-                  Edit Expense
-                </button>
-              )}
-            </li>
-          );
-        })}
-      </ul>
+                {(!hasSettled && expense.createdBy === user.uid) && (
+                  <button
+                    onClick={() => handleEditExpense(expense)}
+                    className="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+                  >
+                    Edit Expense
+                  </button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       </div>
       {showAddExpenseCard && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">

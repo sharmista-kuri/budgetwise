@@ -63,6 +63,87 @@ export default function Auth() {
         userId
       });
         console.log("Signup successful:", userCredential.user);
+        /*await createData('categories',{
+          name: 'Food',
+          description: 'Manage food',
+          limit: 1000,
+          notifyOnLimit: false,
+          icon: '🍔',
+          color: 'red',
+        },userCredential.user.uid);
+        await createData('categories',{
+          name: 'Housing',
+          description: 'Manage housing',
+          limit: 1000,
+          notifyOnLimit: false,
+          icon: '🏠',
+          color: 'red',
+        },userCredential.user.uid);
+        await createData('categories',{
+          name: 'Utilities',
+          description: 'Manage utilities',
+          limit: 1000,
+          notifyOnLimit: false,
+          icon: '💡',
+          color: 'red',
+        },userCredential.user.uid);
+        // await createData('categories',{
+        //   name: 'Transportation',
+        //   description: 'Manage transportation',
+        //   limit: 1000,
+        //   notifyOnLimit: false,
+        //   icon: '🚇',
+        //   color: 'red',
+        // },userCredential.user.uid);
+        await createData('categories',{
+          name: 'Entertainment',
+          description: 'Manage entertainment',
+          limit: 1000,
+          notifyOnLimit: false,
+          icon: '🍿',
+          color: 'red',
+        },userCredential.user.uid);
+        await createData('categories',{
+          name: 'Recurring Payments',
+          description: 'Manage Recurring Payments',
+          limit: 1000,
+          notifyOnLimit: false,
+          icon: '🔄',
+          color: 'red',
+        },userCredential.user.uid);
+        await createData('categories',{
+          name: 'Miscellaneous',
+          description: 'Manage Miscellaneous',
+          limit: 1000,
+          notifyOnLimit: false,
+          icon: '💰',
+          color: 'red',
+        },userCredential.user.uid);
+        await createData('categories',{
+          name: 'Healthcare',
+          description: 'Healthcare',
+          limit: 1000,
+          notifyOnLimit: false,
+          icon: '🩺',
+          color: 'green',
+        },userCredential.user.uid);
+        await createData('categories',{
+          name: 'Savings',
+          description: 'Savings',
+          limit: 2000,
+          notifyOnLimit: false,
+          icon: '💵',
+          color: 'pink',
+        },userCredential.user.uid);
+        await createData('categories',{
+          name: 'Taxes',
+          description: 'Taxes',
+          limit: 1000,
+          notifyOnLimit: false,
+          icon: '💲',
+          color: 'blue',
+        },userCredential.user.uid);*/
+
       } else {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         console.log("Login successful:", userCredential.user);

@@ -293,3 +293,48 @@ export const checkCategoryLimits = (transactions, categories) => {
     // Alternatively, if using structured data, locate the user entry in payers array and update only their status.
   };
   
+  export const fetchAllExpensesByCategory = async (userId) => {
+    const transactionsRef = collection(db, "transactions");
+    const q = query(transactionsRef, where("userId", "==", userId)); // Only filter by userId
+  
+    try {
+      const snapshot = await getDocs(q);
+      const expensesByMonth = {};
+  
+      // Process each transaction to categorize by month and category
+      snapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        const transactionMonth = format(new Date(data.date), "MM-yyyy");
+  
+        // Initialize the month if not already present
+        if (!expensesByMonth[transactionMonth]) {
+          expensesByMonth[transactionMonth] = {
+            Food: 0,
+            Housing: 0,
+            Utilities: 0,
+            Transportation: 0,
+            Entertainment: 0,
+            "Recurring Payments": 0,
+            Miscellaneous: 0,
+            Healthcare: 0,
+            Savings: 0,
+            Taxes: 0,
+          };
+        }
+  
+        // Add the expense to the relevant category within the month
+        if (expensesByMonth[transactionMonth][data.category] !== undefined) {
+          expensesByMonth[transactionMonth][data.category] += parseFloat(data.amount);
+        }
+      });
+  
+      // Convert the result into an array of arrays sorted by month
+      const sortedMonths = Object.keys(expensesByMonth).sort((a, b) => new Date(a) - new Date(b));
+      const formattedData = sortedMonths.map(month => Object.values(expensesByMonth[month]));
+  
+      return { data: formattedData };
+    } catch (error) {
+      console.error("Error fetching expenses by category and month:", error);
+      return { data: [] };
+    }
+  };
