@@ -89,7 +89,7 @@ const Expenses = () => {
               <li key={expense.id} className="mb-4 p-4 bg-white shadow rounded-lg">
                 <h3 className="text-lg font-semibold">{expense.description}</h3>
                 <p>Amount: ${expense.amount}</p>
-                <p>Date: {expense.date || 'N/A'}</p> {/* Display the date */}
+                {/* <p>Date: {expense.date || 'N/A'}</p> Display the date */}
                 <p>Created By: {expense.createdBy === user.uid ? 'You' : expense.createdByName}</p>
 
                 <h4 className="mt-2 font-semibold">Participants:</h4>
