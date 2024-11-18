@@ -79,7 +79,7 @@ const GroupExpensePredictor = () => {
 
       try {
         setLoading(true);
-        const response = await axios.post("http://52.91.96.86:8000/api/predict-expense/", {
+        const response = await axios.post("http://52.91.96.86:8000/api/predict-group-expense/", {
           data: groupwiseExpenses,
         });
         setPredictions(response.data.prediction);
