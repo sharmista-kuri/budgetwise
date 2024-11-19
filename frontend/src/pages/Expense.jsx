@@ -42,20 +42,19 @@ const Expenses = () => {
           payers: updatedPayers,
         });
 
-        console.log('Expense settled successfully.');
+        setExpenses(prevExpenses =>
+          prevExpenses.map(expense =>
+            expense.id === expenseId
+              ? {
+                  ...expense,
+                  payers: expense.payers.map(payer =>
+                    payer.userId === userId ? { ...payer, settled: true } : payer
+                  ),
+                }
+              : expense
+          )
+        );
       }
-      setExpenses(prevExpenses =>
-        prevExpenses.map(expense =>
-          expense.id === expenseId
-            ? {
-                ...expense,
-                payers: expense.payers.map(payer =>
-                  payer.userId === userId ? { ...payer, settled: true } : payer
-                ),
-              }
-            : expense
-        )
-      );
     } catch (error) {
       console.error('Error settling expense:', error);
     }
@@ -75,71 +74,104 @@ const Expenses = () => {
     setShowAddExpenseCard(false);
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-400 border-solid"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold mb-4 text-white">Your Activity</h2>
-      <div className='w-[80%] justify-center ml-[150px]'>
-        <ul>
+    <div className="min-h-screen bg-gray-900 text-gray-200">
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <h2 className="text-3xl font-bold mb-6 text-blue-400">Your Expenses</h2>
+        
+        <div className="grid gap-6">
           {expenses.map((expense) => {
             const hasSettled = expense.payers.some((payer) => payer.settled);
+            const sortedPayers = [...expense.payers].sort((a, b) => a.name.localeCompare(b.name));
 
             return (
-              <li key={expense.id} className="mb-4 p-4 bg-white shadow rounded-lg">
-                <h3 className="text-lg font-semibold">{expense.description}</h3>
-                <p>Amount: ${expense.amount}</p>
-                {/* <p>Date: {expense.date || 'N/A'}</p> Display the date */}
-                <p>Created By: {expense.createdBy === user.uid ? 'You' : expense.createdByName}</p>
+              <div
+                key={expense.id}
+                className="bg-gray-800 rounded-lg shadow-lg transition transform hover:scale-105 hover:shadow-2xl"
+              >
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-semibold text-blue-300">
+                      {expense.description}
+                    </h3>
+                    <div className="text-2xl font-bold text-green-400">
+                      ${expense.amount.toFixed(2)}
+                    </div>
+                  </div>
 
-                <h4 className="mt-2 font-semibold">Participants:</h4>
-                <ul>
-                  {expense.payers.map((payer) => (
-                    <li key={payer.userId} className="flex justify-between">
-                      <span>{payer.name}</span>
-                      <span>
-                        {payer.settled ? (
-                          <span className="text-green-600">Settled</span>
-                        ) : (
-                          <>
-                            <span className="text-red-600">Owes ${payer.share}</span>
-                            {payer.userId === user.uid && (
-                              <button
-                                onClick={() => handleSettle(expense.id, payer.userId)}
-                                className="ml-2 text-blue-600 underline"
-                              >
-                                Settle
-                              </button>
+                  <p className="text-sm text-gray-400 mb-4">
+                    Created by: {expense.createdBy === user.uid ? 'You' : expense.createdByName}
+                  </p>
+
+                  <div className="bg-gray-700 rounded-lg p-4">
+                    <h4 className="font-medium text-gray-300 mb-3">Participants</h4>
+                    <div className="space-y-3">
+                      {sortedPayers.map((payer) => (
+                        <div
+                          key={payer.userId}
+                          className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-800 hover:bg-gray-600"
+                        >
+                          <span className="text-gray-200 font-medium w-1/3">{payer.name}</span>
+                          <div className="flex items-center space-x-4 w-2/3 justify-end">
+                            {payer.settled ? (
+                              <span className="px-3 py-1 bg-green-600 text-gray-100 rounded-full text-sm">
+                                Settled
+                              </span>
+                            ) : (
+                              <>
+                                <span className="text-red-400 font-medium text-sm w-24 text-right">
+                                  Owes ${payer.share.toFixed(2)}
+                                </span>
+                                {payer.userId === user.uid && (
+                                  <button
+                                    onClick={() => handleSettle(expense.id, payer.userId)}
+                                    className="px-4 py-2 bg-blue-500 text-sm font-medium rounded-lg text-white hover:bg-blue-600"
+                                  >
+                                    Settle Up
+                                  </button>
+                                )}
+                              </>
                             )}
-                          </>
-                        )}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
 
-                {(!hasSettled && expense.createdBy === user.uid) && (
-                  <button
-                    onClick={() => handleEditExpense(expense)}
-                    className="mt-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
-                  >
-                    Edit Expense
-                  </button>
-                )}
-              </li>
+                  {!hasSettled && expense.createdBy === user.uid && (
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        onClick={() => handleEditExpense(expense)}
+                        className="px-4 py-2 bg-gray-600 text-sm font-medium text-white rounded-lg hover:bg-gray-500"
+                      >
+                        Edit Expense
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             );
           })}
-        </ul>
-      </div>
-      {showAddExpenseCard && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <AddExpenseCard
-            editingExpense={editingExpense}
-            onSave={handleSaveExpense}
-            onClose={() => setShowAddExpenseCard(false)}
-          />
         </div>
-      )}
+
+        {showAddExpenseCard && (
+          <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <AddExpenseCard
+              editingExpense={editingExpense}
+              onSave={handleSaveExpense}
+              onClose={() => setShowAddExpenseCard(false)}
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -4,7 +4,37 @@ import { motion } from "framer-motion";
 import { fetchData } from "../services/firestoreService";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth, db } from "../firebase";
-import { collection, query, where, getDocs, addDoc, updateDoc, doc, arrayUnion, arrayRemove } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  updateDoc,
+  doc,
+  arrayUnion,
+  arrayRemove,
+} from "firebase/firestore";
+
+// Notification Component
+function Notification({ message, isVisible, onClose }) {
+  useEffect(() => {
+    if (isVisible) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 3000); // Auto-hide after 3 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, onClose]);
+
+  if (!isVisible) return null;
+
+  return (
+    <div className="fixed bottom-4 right-4 bg-indigo-600 text-white p-4 rounded-lg shadow-lg">
+      {message}
+    </div>
+  );
+}
 
 export default function Friends() {
   const [user] = useAuthState(auth);
@@ -14,20 +44,23 @@ export default function Friends() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
-  
+  const [notification, setNotification] = useState({ message: "", isVisible: false });
+  const [userNotFound, setUserNotFound] = useState(false);  // New state for "user not found" message
+
+  const showNotification = (message) => {
+    setNotification({ message, isVisible: true });
+  };
 
   useEffect(() => {
     if (user) {
       const loadFriends = async () => {
-        // Fetch user data including friends array
         const userDoc = await fetchData("users", user.uid);
         setUserData(userDoc[0]);
 
         if (userDoc[0]?.friends) {
-          setFriends(userDoc[0].friends); // Set friends from user data
+          setFriends(userDoc[0].friends);
         }
 
-        // Fetch pending friend requests
         const requestsData = await fetchPendingFriendRequests(user.uid);
         setRequests(requestsData);
 
@@ -40,7 +73,11 @@ export default function Friends() {
 
   const fetchPendingFriendRequests = async (userId) => {
     const requestsRef = collection(db, "friendRequests");
-    const q = query(requestsRef, where("toUserId", "==", userId), where("status", "==", "pending"));
+    const q = query(
+      requestsRef,
+      where("toUserId", "==", userId),
+      where("status", "==", "pending")
+    );
     const snapshot = await getDocs(q);
     return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
   };
@@ -63,55 +100,74 @@ export default function Friends() {
       }))
       .filter((result) => !friends.some((friend) => friend.friendId === result.id));
 
+    if (results.length === 0) {
+      setUserNotFound(true);  // Display "User not found"
+    } else {
+      setUserNotFound(false);  // Reset if results are found
+    }
+
     setSearchResults(results);
   };
 
   const handleAddFriendRequest = async (friendId, friendName) => {
-    const requestRef = collection(db, "friendRequests");
-    await addDoc(requestRef, {
-      fromUserId: user.uid,
-      fromUserName: userData.displayName,
-      toUserId: friendId,
-      toUserName: friendName,
-      status: "pending",
-    });
+    try {
+      const requestRef = collection(db, "friendRequests");
+      await addDoc(requestRef, {
+        fromUserId: user.uid,
+        fromUserName: userData.displayName,
+        toUserId: friendId,
+        toUserName: friendName,
+        status: "pending",
+      });
 
-    setSearchResults(searchResults.filter((result) => result.id !== friendId));
+      setSearchResults(searchResults.filter((result) => result.id !== friendId));
+      showNotification(`Friend request sent to ${friendName}!`);
+    } catch (error) {
+      showNotification("Failed to send friend request. Try again.");
+    }
   };
 
   const handleAcceptRequest = async (requestId, requesterId, requesterName) => {
-    // Add each user to the other's friends array
-    const userRef = doc(db, "users", user.uid);
-    const requesterRef = doc(db, "users", requesterId);
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const requesterRef = doc(db, "users", requesterId);
 
-    await updateDoc(userRef, {
-      friends: arrayUnion({ friendId: requesterId, friendName: requesterName }),
-    });
+      await updateDoc(userRef, {
+        friends: arrayUnion({ friendId: requesterId, friendName: requesterName }),
+      });
 
-    await updateDoc(requesterRef, {
-      friends: arrayUnion({ friendId: user.uid, friendName: userData.displayName }),
-    });
+      await updateDoc(requesterRef, {
+        friends: arrayUnion({ friendId: user.uid, friendName: userData.displayName }),
+      });
 
-    // Update friend request status to accepted
-    const requestDoc = doc(db, "friendRequests", requestId);
-    await updateDoc(requestDoc, { status: "accepted" });
+      const requestDoc = doc(db, "friendRequests", requestId);
+      await updateDoc(requestDoc, { status: "accepted" });
 
-    setRequests(requests.filter((request) => request.id !== requestId));
+      setRequests(requests.filter((request) => request.id !== requestId));
+      showNotification(`${requesterName} is now your friend!`);
+    } catch (error) {
+      showNotification("Failed to accept friend request. Try again.");
+    }
   };
 
   const handleRemoveFriend = async (friendId, friendName) => {
-    const userRef = doc(db, "users", user.uid);
-    const friendRef = doc(db, "users", friendId);
+    try {
+      const userRef = doc(db, "users", user.uid);
+      const friendRef = doc(db, "users", friendId);
 
-    await updateDoc(userRef, {
-      friends: arrayRemove({ friendId, friendName }),
-    });
+      await updateDoc(userRef, {
+        friends: arrayRemove({ friendId, friendName }),
+      });
 
-    await updateDoc(friendRef, {
-      friends: arrayRemove({ friendId: user.uid, friendName: userData.displayName }),
-    });
+      await updateDoc(friendRef, {
+        friends: arrayRemove({ friendId: user.uid, friendName: userData.displayName }),
+      });
 
-    setFriends(friends.filter((friend) => friend.friendId !== friendId));
+      setFriends(friends.filter((friend) => friend.friendId !== friendId));
+      showNotification(`${friendName} has been removed from your friends.`);
+    } catch (error) {
+      showNotification("Failed to remove friend. Try again.");
+    }
   };
 
   if (loading) {
@@ -120,16 +176,22 @@ export default function Friends() {
 
   return (
     <>
+      <Notification
+        message={notification.message}
+        isVisible={notification.isVisible}
+        onClose={() => setNotification({ ...notification, isVisible: false })}
+      />
+
       <div className="relative">
         <motion.h1
           initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-4xl font-extrabold text-center text-indigo-400 mt-8 mb-6"
         >
-          <span className="text-white text-6xl">Manage Your</span> <span className="text-6xl">Friends 👥</span>
+          <span className="text-white text-6xl">Manage Your</span>{" "}
+          <span className="text-6xl">Friends 👥</span>
         </motion.h1>
 
-        {/* Search Bar */}
         <div className="flex justify-center mt-4">
           <input
             type="text"
@@ -145,12 +207,18 @@ export default function Friends() {
             Search
           </button>
         </div>
-        
 
-        {/* Search Results */}4
-        {searchResults.length > 0 && (
+        {userNotFound && (
+          <div className="mt-4 text-center text-red-500 font-semibold">
+            User not found
+          </div>
+        )}
+
+        {searchResults.length > 0 && !userNotFound && (
           <div className="mt-4">
-            <h2 className="text-xl font-bold text-center text-indigo-600">Search Results</h2>
+            <h2 className="text-xl font-bold text-center text-indigo-600">
+              Search Results
+            </h2>
             <ul className="max-w-2xl mx-auto w-full gap-4 mt-4">
               {searchResults.map((result) => (
                 <motion.div
@@ -158,11 +226,17 @@ export default function Friends() {
                   className="p-4 flex justify-between items-center bg-gray-100 dark:bg-gray-800 rounded-xl"
                 >
                   <div>
-                    <h3 className="font-medium text-neutral-800 dark:text-neutral-200">{result.displayName}</h3>
-                    <p className="text-neutral-600 dark:text-neutral-400">{result.email}</p>
+                    <h3 className="font-medium text-neutral-800 dark:text-neutral-200">
+                      {result.displayName}
+                    </h3>
+                    <p className="text-neutral-600 dark:text-neutral-400">
+                      {result.email}
+                    </p>
                   </div>
                   <button
-                    onClick={() => handleAddFriendRequest(result.id, result.displayName)}
+                    onClick={() =>
+                      handleAddFriendRequest(result.id, result.displayName)
+                    }
                     className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md"
                   >
                     Add Friend
@@ -173,10 +247,11 @@ export default function Friends() {
           </div>
         )}
 
-        {/* Friend Requests */}
         {requests.length > 0 && (
           <div className="mt-8">
-            <h2 className="text-xl font-bold text-center text-indigo-600">Friend Requests</h2>
+            <h2 className="text-xl font-bold text-center text-indigo-600">
+              Friend Requests
+            </h2>
             <ul className="flex flex-col max-w-2xl mx-auto w-full gap-4 mt-4">
               {requests.map((request) => (
                 <motion.div
@@ -184,11 +259,18 @@ export default function Friends() {
                   className="p-4 flex justify-between items-center bg-gray-100 dark:bg-gray-800 rounded-xl"
                 >
                   <div>
-                    <h3 className="font-medium text-neutral-800 dark:text-neutral-200">{request.fromUserName}</h3>
-                    <p className="text-neutral-600 dark:text-neutral-400">Request from {request.fromUserName}</p>
+                    <h3 className="font-medium text-neutral-800 dark:text-neutral-200">
+                      {request.fromUserName}
+                    </h3>
                   </div>
                   <button
-                    onClick={() => handleAcceptRequest(request.id, request.fromUserId, request.fromUserName)}
+                    onClick={() =>
+                      handleAcceptRequest(
+                        request.id,
+                        request.fromUserId,
+                        request.fromUserName
+                      )
+                    }
                     className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md"
                   >
                     Accept
@@ -199,9 +281,10 @@ export default function Friends() {
           </div>
         )}
 
-        {/* Friends List */}
         <div className="mt-8">
-          <h2 className="text-xl font-bold text-center text-indigo-600">Your Friends</h2>
+          <h2 className="text-xl font-bold text-center text-indigo-600">
+            Your Friends
+          </h2>
           <ul className="flex flex-col max-w-2xl mx-auto w-full gap-4 mt-4">
             {friends.map((friend) => (
               <motion.div
@@ -209,13 +292,15 @@ export default function Friends() {
                 className="p-4 flex justify-between items-center bg-gray-100 dark:bg-gray-800 rounded-xl"
               >
                 <div>
-                  <h3 className="font-medium text-neutral-800 dark:text-neutral-200">{friend.friendName}</h3>
+                  <h3 className="font-medium text-neutral-800 dark:text-neutral-200">
+                    {friend.friendName}
+                  </h3>
                 </div>
                 <button
                   onClick={() => handleRemoveFriend(friend.friendId, friend.friendName)}
                   className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md"
                 >
-                  Remove Friend
+                  Remove
                 </button>
               </motion.div>
             ))}
