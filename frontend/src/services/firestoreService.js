@@ -480,6 +480,58 @@ export const checkCategoryLimits = (transactions, categories) => {
     }
   };
 
+
+  export const fetchGroupExpenseDetails = async (userId) => {
+    try {
+      const expensesRef = collection(db, "expenses");
+      
+      // Query to fetch expenses where the user is in the payerIds array
+      const q = query(
+        expensesRef,
+        where("payerIds", "array-contains", userId) // User is part of the group
+      );
+  
+      const snapshot = await getDocs(q);
+  
+      if (snapshot.empty) {
+        console.warn("No expenses found for user:", userId);
+        return { data: [] };
+      }
+  
+      // Prepare the result array
+      const expensesArray = [];
+  
+      snapshot.docs.forEach((doc) => {
+        const data = doc.data();
+        
+        if (!data.category || !data.amount || !data.payerIds) {
+          console.warn("Incomplete data for document:", doc.id);
+          return; // Skip this document if essential fields are missing
+        }
+  
+        const totalExpense = parseFloat(data.amount || 0);
+        const groupSize = data.payerIds.length;
+        const category = data.category;
+  
+        // Push the expense details into the result array
+        expensesArray.push({
+          Category: category,
+          "Total Expense": totalExpense,
+          "Group Size": groupSize,
+        });
+      });
+  
+      console.log("Fetched group expense details:", expensesArray);
+  
+      return { data: expensesArray };
+      //return expensesArray;
+    } catch (error) {
+      console.error("Error fetching group expense details:", error);
+      return { data: [] };
+    }
+  };
+  
+
   
   
 

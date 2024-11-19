@@ -29,6 +29,7 @@ import Groups from './pages/Groups';
 import Expenses from './pages/Expense';
 import SWDashboard from './pages/SWDashboard';
 import GroupExpensePredictor from './pages/GroupExpensePredictor';
+import AnomolyDetection from './pages/GroupExpenseAnalysis';
 
 
 
@@ -151,6 +152,7 @@ function App() {
         <Route path="/activity" element={user ? <Layout><Expenses /></Layout> : <Navigate to="/auth" />} />
         <Route path="/swdashboard" element={user ? <Layout><SWDashboard /></Layout> : <Navigate to="/auth" />} />
         <Route path="/gPrediction" element={user ? <Layout><GroupExpensePredictor /></Layout> : <Navigate to="/auth" />} />
+        <Route path="/anomolyPrediction" element={user ? <Layout><AnomolyDetection /></Layout> : <Navigate to="/auth" />} />
       </Routes>
     </Router>
   );

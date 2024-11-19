@@ -51,7 +51,7 @@ const ExpensePredictor = () => {
     }
 
     try {
-      const response = await axios.post('http://52.91.96.86:8000/api/predict-expense/', {
+      const response = await axios.post('/api/predict-expense/', {
         data: expenseData.data
       });
       setPredictions(response.data.prediction);

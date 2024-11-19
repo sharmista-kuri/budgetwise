@@ -56,7 +56,7 @@ const LoanEligibility = () => {
 
             try {
                 // Send data to Django API
-                const response = await fetch("http://52.91.96.86:8000/api/predict-loan-eligibility/", {
+                const response = await fetch("/api/predict-loan-eligibility/", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
