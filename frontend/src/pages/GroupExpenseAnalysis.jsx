@@ -66,7 +66,7 @@ const GroupExpenseAnalysis = () => {
         setLoading(true);
         const payload = { data: groupwiseExpenses };
         console.log("Payload to API:", payload);
-        const response = await axios.post("/api/predict-anomalies/", {
+        const response = await axios.post("http://52.91.96.86:8000/api/predict-anomalies/", {
           data: groupwiseExpenses,
         });
 
